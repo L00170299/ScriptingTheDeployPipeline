@@ -1,0 +1,11 @@
+---
+- hosts: atargetpc
+  become: yes
+  tasks:
+    - yum:
+        name: httpd
+        state: latest
+    - service:
+        name: httpd
+        state: started
+        enabled: yes

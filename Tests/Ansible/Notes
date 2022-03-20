@@ -1,0 +1,7 @@
+needed incontrol:
+ansible-galaxy collection install community.general #to allow ufw
+
+
+/var/www/html/*.php
+
+<?php phpinfo(); ?> 

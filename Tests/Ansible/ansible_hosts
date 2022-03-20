@@ -1,0 +1,5 @@
+[webservers]
+alias ansible_ssh_host=atargetpc ansible_user=atarget
+
+[sqlservers]
+alias ansible_ssh_host=atargetpc ansible_user=atarget

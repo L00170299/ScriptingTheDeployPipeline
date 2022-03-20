@@ -1,0 +1,70 @@
+---
+- hosts: webservers
+  become: yes
+  tasks:
+    - yum:
+        name: "{{item}}"
+        state: latest
+      loop:
+        - httpd
+        - ufw
+        - php
+
+    - service:
+        name: "{{item}}"
+        state: started
+        enabled: yes
+      loop:
+        - httpd
+        - ufw
+    
+    - name: Allow all access to tcp ports
+      community.general.ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+- hosts: sqlservers
+  become: yes
+  tasks:
+    - yum:
+        name: "{{item}}"
+        state: latest
+      loop:
+        - community-mysql-server
+        - python3-mysql
+        - ufw
+    - service:
+        name: "{{item}}"
+        state: started
+        enabled: yes
+      loop:
+        - mysqld
+        - ufw
+
+    - name: creating mysql user (medium_post)
+      mysql_user:
+        name: "medium_post"
+        password: "medium_post"
+        priv: '*.*:ALL'
+        host: '%'
+        state: present
+
+    - name: creating medium_db
+      mysql_db:
+        name: "medium_db"
+        state: present
+
+    - name: insert sample data into database  
+      mysql_db:
+        name: testdb
+        state: import
+        target: /tmp/dump.sql
+        login_user: medium_post
+        login_password: medium_post
+    
+    - name: Allow all access to tcp ports
+      community.general.ufw:
+        rule: allow
+        port: '3306'
+        proto: tcp
