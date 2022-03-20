@@ -3,7 +3,7 @@
     table {
     font-family: arial, sans-serif;
     border-collapse: collapse;
-    width: 100%;
+    width: 50%;
     }
 
     td, th {
@@ -35,8 +35,6 @@
             $dbname = "lyit_db";
 
             $conn = mysqli_connect($servername, $username, $password, $dbname);
-
-            echo '<h2>Records in DB</h2>';
 
             if (!$conn) {
             die("Connection failed: " . mysqli_connect_error());
