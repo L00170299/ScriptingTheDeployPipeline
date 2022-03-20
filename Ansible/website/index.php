@@ -17,7 +17,7 @@
            die("Connection failed: " . mysqli_connect_error());
         }
 
-        $sql = "SELECT idnew_table, lnumber, course_nm FROM LYITTable";
+        $sql = "SELECT row_id, lnumber, course_nm FROM LYITTable";
         $result = $conn->query($sql);
 
         if ($result->num_rows > 0) {

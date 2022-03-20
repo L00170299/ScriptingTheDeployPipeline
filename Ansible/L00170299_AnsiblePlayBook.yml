@@ -25,12 +25,16 @@
         port: '80'
         proto: tcp
     
-    - name: Example clone of a single branch
+    - name: Clone of a single branch
       git:
         repo: https://github.com/L00170299/ScriptingTheDeployPipeline.git
         dest: /tmp/deploy
-        single_branch: yes
-        version: master
+
+    - name: Deploy php page
+      ansible.builtin.copy:
+        src: /tmp/deploy/Ansible/website/index.php
+        dest: /var/www/html/
+        remote_src: yes
 
 - hosts: sqlservers
   become: yes
@@ -76,8 +80,6 @@
       git:
         repo: https://github.com/L00170299/ScriptingTheDeployPipeline.git
         dest: /tmp/deploy
-        single_branch: yes
-        version: master
 
     - name: insert sample data into database
       mysql_db:
