@@ -1,0 +1,296 @@
+Parameters:
+  ImageId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+  InstanceTypeParameter:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+    Description: Enter t2.nano or t2.micro. The default is set as t2.micro
+  LYITAdminAddr:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: Use a valid ip address.
+  KeyPairName:
+    Type: String
+    Description: Enter the name of a keypair name to get access public instance
+Resources:
+  LYITVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 192.168.0.0/16
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 44869cb7-f4a0-4a33-8046-3bbd13f33aca
+  LYITPubSub:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref LYITVPC
+      CidrBlock: 192.168.1.0/24
+      MapPublicIpOnLaunch: true
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 69f41147-6985-4a88-963c-58d445751d9c
+  LYITPrivSub:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref LYITVPC
+      CidrBlock: 192.168.0.0/24
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b230a842-869e-4116-a9cf-1005625714cd
+  JumpBoxEC2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceTypeParameter
+      KeyName: !Ref KeyPairName
+      SubnetId: !Ref LYITPubSub
+      SecurityGroupIds:
+        - !Ref JumpEC2SG
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 490f6f78-260a-409c-8ea9-cac24df7be42
+  JumpEC2SG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for JumpBoxEC2 host
+      VpcId: !Ref LYITVPC
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 21148349-12c3-4fd7-9f09-1293f8f1db10
+  JumpEC2SSHFromInternet:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref JumpEC2SG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: !Ref LYITAdminAddr
+  JumpEC2SSHToLYITApp:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    Properties:
+      GroupId: !Ref JumpEC2SG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      DestinationSecurityGroupId: !Ref LYITAppSG
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 56765af3-0a26-4efb-b695-67f3af4b0ee7
+  LYITAppEC2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceTypeParameter
+      KeyName: !Ref KeyPairName
+      SubnetId: !Ref LYITPrivSub
+      SecurityGroupIds:
+        - !Ref LYITAppSG
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 4983aca4-121d-4c15-8d83-cb8922518137
+  LYITAppSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for LYITAppEC2 host
+      VpcId: !Ref LYITVPC
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 97ace455-65be-4330-8e43-43d85cdd335a
+  LYITAppSSHFromJumpEC2:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref LYITAppSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      SourceSecurityGroupId: !Ref JumpEC2SG
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 2d0f8605-46ab-4b34-9643-de75c712b46a
+  AWSInternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties: {}
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e1f196ee-3e71-4353-82ac-acb1dc56cfca
+  LYITVPCGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      InternetGatewayId: !Ref AWSInternetGateway
+      VpcId: !Ref LYITVPC
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: acd49967-a042-47f0-8524-42db38aafa3a
+  PubRouting:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref LYITVPC
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: aa653029-c336-4c6c-a96d-a4765323017b
+  PubRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: LYITVPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PubRouting
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref AWSInternetGateway
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 13057f43-bbca-446b-b6d7-97c62a0d47ea
+  SubnetRouteTableAssociationAZ1:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PubRouting
+      SubnetId: !Ref LYITPubSub
+Metadata:
+  'AWS::CloudFormation::Designer':
+    e1f196ee-3e71-4353-82ac-acb1dc56cfca:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 840
+        'y': 490
+      z: 2
+      parent: 44869cb7-f4a0-4a33-8046-3bbd13f33aca
+      embeds: []
+    44869cb7-f4a0-4a33-8046-3bbd13f33aca:
+      size:
+        width: 680
+        height: 390
+      position:
+        x: 530
+        'y': 180
+      z: 1
+      embeds:
+        - e1f196ee-3e71-4353-82ac-acb1dc56cfca
+        - b230a842-869e-4116-a9cf-1005625714cd
+        - 69f41147-6985-4a88-963c-58d445751d9c
+    aa653029-c336-4c6c-a96d-a4765323017b:
+      size:
+        width: 110
+        height: 110
+      position:
+        x: 570
+        'y': 390
+      z: 3
+      parent: 69f41147-6985-4a88-963c-58d445751d9c
+      embeds:
+        - 13057f43-bbca-446b-b6d7-97c62a0d47ea
+    acd49967-a042-47f0-8524-42db38aafa3a:
+      source:
+        id: 44869cb7-f4a0-4a33-8046-3bbd13f33aca
+      target:
+        id: e1f196ee-3e71-4353-82ac-acb1dc56cfca
+      z: 2
+    13057f43-bbca-446b-b6d7-97c62a0d47ea:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 590
+        'y': 420
+      z: 4
+      parent: aa653029-c336-4c6c-a96d-a4765323017b
+      embeds: []
+      isassociatedwith:
+        - e1f196ee-3e71-4353-82ac-acb1dc56cfca
+      iscontainedinside:
+        - aa653029-c336-4c6c-a96d-a4765323017b
+        - aa653029-c336-4c6c-a96d-a4765323017b
+      dependson:
+        - acd49967-a042-47f0-8524-42db38aafa3a
+    97ace455-65be-4330-8e43-43d85cdd335a:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 940
+        'y': 240
+      z: 3
+      parent: b230a842-869e-4116-a9cf-1005625714cd
+      embeds: []
+      iscontainedinside:
+        - 44869cb7-f4a0-4a33-8046-3bbd13f33aca
+    21148349-12c3-4fd7-9f09-1293f8f1db10:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 730
+        'y': 240
+      z: 3
+      parent: 69f41147-6985-4a88-963c-58d445751d9c
+      embeds: []
+      iscontainedinside:
+        - 44869cb7-f4a0-4a33-8046-3bbd13f33aca
+    2d0f8605-46ab-4b34-9643-de75c712b46a:
+      source:
+        id: 21148349-12c3-4fd7-9f09-1293f8f1db10
+      target:
+        id: 97ace455-65be-4330-8e43-43d85cdd335a
+      z: 3
+    56765af3-0a26-4efb-b695-67f3af4b0ee7:
+      source:
+        id: 97ace455-65be-4330-8e43-43d85cdd335a
+      target:
+        id: 21148349-12c3-4fd7-9f09-1293f8f1db10
+      z: 3
+    b230a842-869e-4116-a9cf-1005625714cd:
+      size:
+        width: 210
+        height: 290
+      position:
+        x: 920
+        'y': 210
+      z: 2
+      parent: 44869cb7-f4a0-4a33-8046-3bbd13f33aca
+      embeds:
+        - 97ace455-65be-4330-8e43-43d85cdd335a
+        - 4983aca4-121d-4c15-8d83-cb8922518137
+    4983aca4-121d-4c15-8d83-cb8922518137:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 940
+        'y': 370
+      z: 3
+      parent: b230a842-869e-4116-a9cf-1005625714cd
+      embeds: []
+      isassociatedwith:
+        - 97ace455-65be-4330-8e43-43d85cdd335a
+    69f41147-6985-4a88-963c-58d445751d9c:
+      size:
+        width: 260
+        height: 290
+      position:
+        x: 550
+        'y': 230
+      z: 2
+      parent: 44869cb7-f4a0-4a33-8046-3bbd13f33aca
+      embeds:
+        - aa653029-c336-4c6c-a96d-a4765323017b
+        - 21148349-12c3-4fd7-9f09-1293f8f1db10
+        - 490f6f78-260a-409c-8ea9-cac24df7be42
+    490f6f78-260a-409c-8ea9-cac24df7be42:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 730
+        'y': 370
+      z: 3
+      parent: 69f41147-6985-4a88-963c-58d445751d9c
+      embeds: []
+      isassociatedwith:
+        - 21148349-12c3-4fd7-9f09-1293f8f1db10
