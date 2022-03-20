@@ -9,6 +9,7 @@
         - httpd
         - ufw
         - php
+        - git
 
     - service:
         name: "{{item}}"
@@ -23,6 +24,13 @@
         rule: allow
         port: '80'
         proto: tcp
+    
+    - name: Example clone of a single branch
+      git:
+        repo: https://github.com/L00170299/ScriptingTheDeployPipeline.git
+        dest: /tmp/deploy
+        single_branch: yes
+        version: master
 
 - hosts: sqlservers
   become: yes
@@ -34,6 +42,9 @@
         - community-mysql-server
         - python3-mysql
         - ufw
+        - php
+        - git
+
     - service:
         name: "{{item}}"
         state: started
@@ -42,29 +53,36 @@
         - mysqld
         - ufw
 
-    - name: creating mysql user (medium_post)
+    - name: creating mysql user (lyit_user)
       mysql_user:
-        name: "medium_post"
-        password: "medium_post"
+        name: "lyit_user"
+        password: "lyit_pass"
         priv: '*.*:ALL'
         host: '%'
         state: present
 
-    - name: creating medium_db
+    - name: creating lyit_db
       mysql_db:
-        name: "medium_db"
+        name: "lyit_db"
         state: present
-
-    - name: insert sample data into database  
-      mysql_db:
-        name: testdb
-        state: import
-        target: /tmp/dump.sql
-        login_user: medium_post
-        login_password: medium_post
     
     - name: Allow all access to tcp ports
       community.general.ufw:
         rule: allow
         port: '3306'
         proto: tcp
+
+    - name: Clone of a single branch
+      git:
+        repo: https://github.com/L00170299/ScriptingTheDeployPipeline.git
+        dest: /tmp/deploy
+        single_branch: yes
+        version: master
+
+    - name: insert sample data into database
+      mysql_db:
+        name: lyit_db
+        state: import
+        target: /tmp/deploy/Ansible/website/table.sql
+        login_user: lyit_user
+        login_password: lyit_pass

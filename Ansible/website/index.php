@@ -5,9 +5,9 @@
  <body>
  <?php
         $servername = "localhost";
-        $username = "medium_post";
-        $password = "medium_post";
-        $dbname = "medium_db";
+        $username = "lyit_user";
+        $password = "lyit_pass";
+        $dbname = "lyit_db";
 
       	$conn = mysqli_connect($servername, $username, $password, $dbname);
 
@@ -17,12 +17,12 @@
            die("Connection failed: " . mysqli_connect_error());
         }
 
-        $sql = "SELECT idnew_table, lnumber, course_nm FROM newtable";
+        $sql = "SELECT idnew_table, lnumber, course_nm FROM LYITTable";
         $result = $conn->query($sql);
 
         if ($result->num_rows > 0) {
                 while($row = $result->fetch_assoc()) {
-                echo "<br> RecordId: ". $row["idnew_table"]. " - Name: ". $row["lnumber"]. " " . $row["course_nm"] . "<br>";
+                echo "<br> RowId: ". $row["row_id"]. " - LNumber: ". $row["lnumber"]. " - Course Name " . $row["course_nm"] . "<br>";
         }
         } else {
             echo "0 results";
