@@ -6,6 +6,12 @@
         repo: https://github.com/L00170299/ScriptingTheDeployPipeline.git
         dest: /tmp/deploy
 
+    - name: Copy source file
+      ansible.builtin.copy:
+        src: /tmp/deploy/Ansible/website/import_data.csv
+        dest: /var/lib/mysql-files/
+        remote_src: yes
+
     - name: insert sample data into database
       mysql_db:
         name: lyit_db
