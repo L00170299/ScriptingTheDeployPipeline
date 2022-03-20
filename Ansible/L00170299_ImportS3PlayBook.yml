@@ -1,0 +1,15 @@
+- hosts: sqlservers
+  become: yes
+  tasks:
+    - name: Clone of a single branch
+      git:
+        repo: https://github.com/L00170299/ScriptingTheDeployPipeline.git
+        dest: /tmp/deploy
+
+    - name: insert sample data into database
+      mysql_db:
+        name: lyit_db
+        state: import
+        target: /tmp/deploy/Ansible/website/import_data.sql
+        login_user: lyit_user
+        login_password: lyit_pass
