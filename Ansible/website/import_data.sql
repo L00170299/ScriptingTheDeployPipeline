@@ -3,3 +3,4 @@ INTO TABLE LYITTable
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
+(lnumber, course_nm)
