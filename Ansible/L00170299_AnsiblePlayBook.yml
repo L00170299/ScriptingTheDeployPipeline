@@ -9,6 +9,7 @@
         - httpd
         - ufw
         - php
+        - php-mysqlnd
         - git
 
     - service:
