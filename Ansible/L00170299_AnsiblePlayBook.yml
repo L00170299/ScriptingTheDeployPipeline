@@ -1,6 +1,12 @@
 ---
 - hosts: webservers
   become: yes
+  vars:
+    git_repo: "https://github.com/L00170299/ScriptingTheDeployPipeline.git"
+    sql_user: "lyit_user"
+    sql_pass: "lyit_pass"
+    sql_db: "lyit_db"
+
   tasks:
     - yum:
         name: "{{item}}"
@@ -28,7 +34,7 @@
     
     - name: Clone of a single branch
       git:
-        repo: https://github.com/L00170299/ScriptingTheDeployPipeline.git
+        repo: "{{git_repo}}"
         dest: /tmp/deploy
 
     - name: Deploy php page
@@ -39,6 +45,11 @@
 
 - hosts: sqlservers
   become: yes
+  vars:
+    git_repo: "https://github.com/L00170299/ScriptingTheDeployPipeline.git"
+    sql_user: "lyit_user"
+    sql_pass: "lyit_pass"
+    sql_db: "lyit_db"
   tasks:
     - yum:
         name: "{{item}}"
@@ -49,6 +60,9 @@
         - ufw
         - php
         - git
+        - awscli
+        - python3-boto3
+        - python3-botocore
 
     - service:
         name: "{{item}}"
@@ -58,17 +72,17 @@
         - mysqld
         - ufw
 
-    - name: creating mysql user (lyit_user)
+    - name: creating mysql user
       mysql_user:
-        name: "lyit_user"
-        password: "lyit_pass"
+        name: "{{sql_user}}"
+        password: "{{sql_pass}}"
         priv: '*.*:ALL'
         host: '%'
         state: present
 
-    - name: creating lyit_db
+    - name: creating database
       mysql_db:
-        name: "lyit_db"
+        name: "{{sql_db}}"
         state: present
     
     - name: Allow all access to tcp ports
@@ -79,13 +93,13 @@
 
     - name: Clone of a single branch
       git:
-        repo: https://github.com/L00170299/ScriptingTheDeployPipeline.git
+        repo: "{{git_repo}}"
         dest: /tmp/deploy
 
     - name: insert sample data into database
       mysql_db:
-        name: lyit_db
+        name: "{{sql_db}}"
         state: import
         target: /tmp/deploy/Ansible/website/table.sql
-        login_user: lyit_user
-        login_password: lyit_pass
+        login_user: "{{sql_user}}"
+        login_password: "{{sql_pass}}"

@@ -1,21 +1,34 @@
 - hosts: sqlservers
   become: yes
+  vars:
+    git_repo: "https://github.com/L00170299/ScriptingTheDeployPipeline.git"
+    sql_user: "lyit_user"
+    sql_pass: "lyit_pass"
+    sql_db: "lyit_db"
+    aws_access_key: AKIA4MX55JQWVN6HIYB3
+    aws_secret_key: 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
+    aws_region: eu-west-1
+    aws_bucket: cf-templates-1qb6cdt9t6a34-eu-west-1
   tasks:
     - name: Clone of a single branch
       git:
-        repo: https://github.com/L00170299/ScriptingTheDeployPipeline.git
+        repo: "{{git_repo}}"
         dest: /tmp/deploy
 
-    - name: Copy source file
-      ansible.builtin.copy:
-        src: /tmp/deploy/Ansible/website/import_data.csv
+    - name: GET Source from AWS S3
+      amazon.aws.aws_s3:
+        aws_access_key: "aws_access_key"
+        aws_secret_key: "aws_secret_key"
+        region: "aws_region"
+        bucket: "aws_bucket"
+        object: /import_data.csv
         dest: /var/lib/mysql-files/
-        remote_src: yes
+        mode: get
 
     - name: insert sample data into database
       mysql_db:
-        name: lyit_db
+        name: "{{sql_db}}"
         state: import
         target: /tmp/deploy/Ansible/website/import_data.sql
-        login_user: lyit_user
-        login_password: lyit_pass
+        login_user: "{{sql_user}}"
+        login_password: "{{sql_pass}}"
