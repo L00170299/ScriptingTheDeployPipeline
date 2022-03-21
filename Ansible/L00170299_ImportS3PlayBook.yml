@@ -5,8 +5,8 @@
     sql_user: "lyit_user"
     sql_pass: "lyit_pass"
     sql_db: "lyit_db"
-    aws_access_key: "AKIA4MX55JQWVN6HIYB3"
-    aws_secret_key: "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"
+    aws_access_key: ""
+    aws_secret_key: ""
     aws_region: "eu-west-1"
     aws_bucket: "cf-templates-1qb6cdt9t6a34-eu-west-1"
   tasks:
