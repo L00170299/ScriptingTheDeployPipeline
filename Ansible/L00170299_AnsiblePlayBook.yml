@@ -1,13 +1,15 @@
 ---
+# Configure devices in group webservers
+# =====================================
 - hosts: webservers
   become: yes
-  vars:
+  vars: # Variables declaration. Sensible data is stored in a vault
     git_repo: "https://github.com/L00170299/ScriptingTheDeployPipeline.git"
     sql_user: "lyit_user"
-    sql_pass: "lyit_pass"
     sql_db: "lyit_db"
 
   tasks:
+    # Install dependencies
     - yum:
         name: "{{item}}"
         state: latest
@@ -18,6 +20,7 @@
         - php-mysqlnd
         - git
 
+    # Be sure that services are running
     - service:
         name: "{{item}}"
         state: started
@@ -26,31 +29,36 @@
         - httpd
         - ufw
     
+    # Open firewall ports
     - name: Allow all access to tcp ports
       community.general.ufw:
         rule: allow
         port: '80'
         proto: tcp
     
+    # Clone website repository
     - name: Clone of a single branch
       git:
         repo: "{{git_repo}}"
         dest: /tmp/deploy
 
+    # Deploy/Copy website files to httpd server folder
     - name: Deploy php page
       ansible.builtin.copy:
         src: /tmp/deploy/Ansible/website/index.php
         dest: /var/www/html/
         remote_src: yes
 
+# Configure devices in group webservers
+# =====================================
 - hosts: sqlservers
   become: yes
-  vars:
+  vars: # Variables declaration. Sensible data is stored in a vault
     git_repo: "https://github.com/L00170299/ScriptingTheDeployPipeline.git"
     sql_user: "lyit_user"
-    sql_pass: "lyit_pass"
     sql_db: "lyit_db"
   tasks:
+    # Install dependencies
     - yum:
         name: "{{item}}"
         state: latest
@@ -64,6 +72,7 @@
         - python3-boto3
         - python3-botocore
 
+    # Be sure that services are running
     - service:
         name: "{{item}}"
         state: started
@@ -72,6 +81,14 @@
         - mysqld
         - ufw
 
+    # Open firewall ports for mysql
+    - name: Allow all access to tcp ports
+      community.general.ufw:
+        rule: allow
+        port: '3306'
+        proto: tcp
+
+    # create new user for database
     - name: creating mysql user
       mysql_user:
         name: "{{sql_user}}"
@@ -80,23 +97,20 @@
         host: '%'
         state: present
 
+    # create new database
     - name: creating database
       mysql_db:
         name: "{{sql_db}}"
         state: present
-    
-    - name: Allow all access to tcp ports
-      community.general.ufw:
-        rule: allow
-        port: '3306'
-        proto: tcp
 
+    # Clone git repository with SQL scripts
     - name: Clone of a single branch
       git:
         repo: "{{git_repo}}"
         dest: /tmp/deploy
 
-    - name: insert sample data into database
+    # Create database structure
+    - name: Import database structure from script
       mysql_db:
         name: "{{sql_db}}"
         state: import

@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS `LYITTable` (
   PRIMARY KEY (`row_id`)
 );
 
-DELETE FROM LYITTable where lnumber = 'L00170299';
+-- DELETE FROM LYITTable where lnumber = 'L00170299';
 
-INSERT IGNORE INTO LYITTable 
-  (lnumber, course_nm) 
-VALUES 
-  ('L00170299', 'Scripting The Deploy Pipeline');
+-- INSERT IGNORE INTO LYITTable 
+--   (lnumber, course_nm) 
+-- VALUES 
+--   ('L00170299', 'Scripting The Deploy Pipeline');
